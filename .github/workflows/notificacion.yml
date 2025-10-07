@@ -1,0 +1,36 @@
+# .github/workflows/notificacion.yml
+
+name: Notificacion de PUSH Exitoso (Node.js)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  notificar_y_ejecutar:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Ejecutar el programa 'Hola Mundo'
+        run: npm start
+
+      - name: Enviar notificacion a ntfy.sh/devops-itla
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          COMMIT_AUTHOR="${{ github.event.pusher.name }}"
+          REPO_NAME="${{ github.repository }}"
+
+          curl -d "PUSH exitoso en $REPO_NAME por $COMMIT_AUTHOR. Ejecución de CI: OK. Mensaje: $COMMIT_MSG" \
+               -H "Title: ✅ CI/CD Exitoso con Node.js" \
+               -H "Tags: nodejs, white_check_mark" \
+               "https://ntfy.sh/devops-itla"
