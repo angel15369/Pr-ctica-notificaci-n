@@ -1,6 +1,6 @@
-# .github/workflows/notificacion.yml
 
-name: Notificacion de PUSH Exitoso (Node.js)
+
+name: CI/CD - Ejecutar y Desplegar (Node.js)
 
 on:
   push:
@@ -9,28 +9,72 @@ on:
   workflow_dispatch:
 
 jobs:
-  notificar_y_ejecutar:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    
+
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
 
     steps:
+ 
       - name: Checkout del código
         uses: actions/checkout@v4
+      
 
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Ejecutar el programa 'Hola Mundo'
-        run: npm start
 
-      - name: Enviar notificacion a ntfy.sh/devops-itla
+      - name: Ejecutar la prueba de Integración Continua (CI)
+        run: |
+          npm install 
+          npm start # Ejecuta tu index.js (Verifica que no haya fallos)
+      
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+
+
+      - name: Subir Artifacto de Despliegue
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: . 
+
+
+      - name: Desplegar a GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+      
+     
+
+
+      - name: Notificar Éxito Total (CI + CD) a ntfy
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
           COMMIT_AUTHOR="${{ github.event.pusher.name }}"
           REPO_NAME="${{ github.repository }}"
-
-          curl -d "PUSH exitoso en $REPO_NAME por $COMMIT_AUTHOR. Ejecución de CI: OK. Mensaje: $COMMIT_MSG" \
-               -H "Title: ✅ CI/CD Exitoso con Node.js" \
-               -H "Tags: nodejs, white_check_mark" \
+          
+         
+          MESSAGE_BODY="
+          CI/CD COMPLETO - Despliegue Exitoso
+          
+          Estudiante: Ángel Amilcar Volquez Rosario (2023-0965)
+          Curso: Electiva 2 - DevOps
+          Profesor: Elvys Cruz
+          
+          Repositorio: $REPO_NAME
+          Rama: main
+          Commit: $COMMIT_MSG
+          Autor: $COMMIT_AUTHOR
+          "
+          
+         
+          curl -d "$MESSAGE_BODY" \
+               -H "Title: 🚀 Despliegue a Pages Exitoso (Ángel Volquez)" \
+               -H "Tags: rocket, deployment, check_mark" \
                "https://ntfy.sh/devops-itla"
